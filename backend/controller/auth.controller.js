@@ -83,15 +83,14 @@ export const login = async (req, res) => {
         role: user.role,
         email: user.email,
       });
-    }else{
-        res.status(401).json({message:"Invalid email or password"})
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
     console.log("Error in login controller", error.message);
     res
       .status(500)
       .json({ message: `Error while loging user ${error.message}` });
-
   }
 };
 export const logout = async (req, res) => {
@@ -112,5 +111,40 @@ export const logout = async (req, res) => {
     res
       .status(500)
       .json({ message: "Server Error while logout", error: error.message });
+  }
+};
+
+export const refreshTokenController = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ message: "No refresh token provided" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const storedToken = await redis.get(`refresh_Token:${decoded.userId}`);
+
+    if (storedToken !== refreshToken) {
+      res.status(401).json({ message: "Invalid refresh Token" });
+    }
+    const accessToken = jwt.sign(
+      { userId: decoded.userId },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+    res.json({ message: "Token refreshed Sucessfully" });
+  } catch (error) {
+    console.log("Error in Refresh-token controller", error.message);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };

@@ -11,8 +11,10 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
+
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/products", authRoutes);
 
 app.listen(PORT, () => {
   connectDb();
