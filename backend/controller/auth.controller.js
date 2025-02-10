@@ -14,7 +14,7 @@ const generateToken = (userId) => {
 
 const storeRefreshToken = async (userId, refreshToken) => {
   await redis.set(
-    `refreshToken:${userId}`,
+    `refresh_Token:${userId}`,
     refreshToken,
     "EX",
     7 * 24 * 60 * 60
@@ -55,23 +55,62 @@ export const register = async (req, res) => {
 
     setCookies(res, accessToken, refreshToken);
     res.status(201).json({
-      user: {
-        userId: user._id,
-        username: user.username,
-        role: user.role,
-        email: user.email,
-      },
-      message: "User has been created.",
+      userId: user._id,
+      username: user.username,
+      role: user.role,
+      email: user.email,
     });
   } catch (error) {
+    console.log("Error in register controller", error.message);
     res
       .status(500)
       .json({ message: `Error while creating user ${error.message}` });
   }
 };
 export const login = async (req, res) => {
-  res.send("login page");
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (user && (await user.comparePassword(password))) {
+      const { accessToken, refreshToken } = generateToken(user._id);
+      await storeRefreshToken(user._id, refreshToken);
+      setCookies(res, accessToken, refreshToken);
+
+      res.status(200).json({
+        userId: user._id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      });
+    }else{
+        res.status(401).json({message:"Invalid email or password"})
+    }
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res
+      .status(500)
+      .json({ message: `Error while loging user ${error.message}` });
+
+  }
 };
 export const logout = async (req, res) => {
-  res.send("logout page");
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+      await redis.del(`refresh_Token:${decoded.userId}`);
+    }
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.status(200).json({ message: "Logout Sucessfully" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res
+      .status(500)
+      .json({ message: "Server Error while logout", error: error.message });
+  }
 };
