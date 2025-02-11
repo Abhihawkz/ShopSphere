@@ -5,12 +5,13 @@ import {
   removeAllFromCart,
   updateQuantity,
 } from "../controller/cart.controller.js";
+import { userMiddleware } from "../middleware/user.middleware.js";
 
 const router = Router();
 
-router.get("/", getCardProducts);
-router.post("/", addToCart);
-router.delete("/", removeAllFromCart);
-router.put("/:id", updateQuantity);
+router.get("/", userMiddleware, getCardProducts);
+router.post("/", userMiddleware, addToCart);
+router.delete("/", userMiddleware, removeAllFromCart);
+router.put("/:id", userMiddleware, updateQuantity);
 
 export default router;
