@@ -1,10 +1,10 @@
 import express from "express";
-import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
-import { getAnalyticsData, getDailySalesData } from "../controllers/analytics.controller.js";
+import { getAnalyticsData, getDailySalesData } from "../controller/analytics.controller.js";
+import { adminMiddleware, userMiddleware } from "../middleware/user.middleware.js";
 
 const router = express.Router();
 
-router.get("/", protectRoute, adminRoute, async (req, res) => {
+router.get("/", userMiddleware, adminMiddleware , async (req, res) => {
 	try {
 		const analyticsData = await getAnalyticsData();
 
