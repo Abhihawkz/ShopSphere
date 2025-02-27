@@ -70,7 +70,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
+    console.log(email,password)
     const user = await User.findOne({ email });
     if (user && (await user.comparePassword(password))) {
       const { accessToken, refreshToken } = generateToken(user._id);
@@ -148,3 +148,14 @@ export const refreshTokenController = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+
+export const getProfile= async(req,res)=>{
+  try {
+      const user = req.user;
+      res.json({user})
+  } catch (error) {
+    console.log("Error in Get Profile Endpoint", error.message);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+}
